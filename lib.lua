@@ -5,6 +5,18 @@ function library:tween(...) TweenService:Create(...):Play() end
 
 local uis = game:GetService("UserInputService")
 
+-- Custom font loaded from GitHub
+local FONT = Font.new(
+    "rbxassetid://0", -- fallback, replaced below
+    Enum.FontWeight.Bold
+)
+pcall(function()
+    FONT = Font.new(
+        "https://raw.githubusercontent.com/aazyris/script/main/JetBrainsMono-Bold.ttf",
+        Enum.FontWeight.Bold
+    )
+end)
+
 function library:create(Object, Properties, Parent)
     local Obj = Instance.new(Object)
 
@@ -201,7 +213,14 @@ function library.new(library_title, cfg_location)
     local isRebinding = false
 
     uis.InputBegan:Connect(function(key)
-        if isRebinding then return end
+        -- rebind takes priority: if waiting for a key, capture it
+        if isRebinding then
+            if key.KeyCode ~= Enum.KeyCode.Unknown then
+                isRebinding = false
+                currentKey = key.KeyCode
+            end
+            return
+        end
         if key.KeyCode ~= currentKey then return end
 
 		ScreenGui.Enabled = not ScreenGui.Enabled
@@ -239,7 +258,7 @@ function library.new(library_title, cfg_location)
         BackgroundTransparency = 1,
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(1, -22, 0, 30),
-        Font = Enum.Font.Ubuntu,
+        FontFace = FONT,
         Text = library_title,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         TextSize = 16,
@@ -258,7 +277,7 @@ function library.new(library_title, cfg_location)
         BackgroundTransparency = 1,
         Position = UDim2.new(1, -8, 0.5, 0),
         Size = UDim2.new(0, 20, 0, 20),
-        Font = Enum.Font.Ubuntu,
+        FontFace = FONT,
         Text = "_",
         TextColor3 = Color3.fromRGB(150, 150, 150),
         TextSize = 14,
@@ -278,7 +297,7 @@ function library.new(library_title, cfg_location)
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 41),
-        Size = UDim2.new(0, 76, 0, 447),
+        Size = UDim2.new(0, 76, 1, -49),
     }, ImageLabel)
     
     local UIListLayout = library:create("UIListLayout", {
@@ -290,7 +309,7 @@ function library.new(library_title, cfg_location)
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 102, 0, 42),
-        Size = UDim2.new(0, 586, 0, 446),
+        Size = UDim2.new(1, -102, 1, -50),
     }, ImageLabel)
 
     -- Wire minimize click here — TabButtons and Tabs are now declared
@@ -338,10 +357,10 @@ end
             BackgroundTransparency = 1,
             Position = UDim2.new(0.5, 0, 0.5, 0),
             Size = UDim2.new(1, -4, 1, -4),
-            Font = Enum.Font.Ubuntu,
+            FontFace = FONT,
             Text = tab_name,
             TextColor3 = Color3.fromRGB(100, 100, 100),
-            TextSize = 14,
+            TextSize = 13,
             TextWrapped = true,
         }, TabButton)
 
@@ -372,7 +391,7 @@ end
             Name = "TabFrames",
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 0, 0, 29),
-            Size = UDim2.new(1, 0, 0, 418),
+            Size = UDim2.new(1, 0, 1, -29),
         }, Tab)
 
         if is_first_tab then
@@ -425,7 +444,7 @@ end
                 Name = "SectionButton",
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1/num_sections, 0, 1, 0),
-                Font = Enum.Font.Ubuntu,
+                FontFace = FONT,
                 Text = section_name,
                 TextColor3 = Color3.fromRGB(100, 100, 100),
                 TextSize = 15,
@@ -472,7 +491,7 @@ end
                 Name = "Left",
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 8, 0, 14),
-                Size = UDim2.new(0, 282, 0, 395),
+                Size = UDim2.new(0.48, -8, 1, -14),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -484,8 +503,8 @@ end
             local Right = library:create("Frame", {
                 Name = "Right",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 298, 0, 14),
-                Size = UDim2.new(0, 282, 0, 395),
+                Position = UDim2.new(0.5, 8, 0, 14),
+                Size = UDim2.new(0.48, -8, 1, -14),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -556,7 +575,7 @@ end
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0.5, 0, 0, -8),
                     Size = UDim2.new(1, 0, 0, 15),
-                    Font = Enum.Font.Ubuntu,
+                    FontFace = FONT,
                     Text = sector_name,
                     TextColor3 = Color3.fromRGB(255, 255, 255),
                     TextSize = 14,
@@ -642,7 +661,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 27, 0, 5),
                             Size = UDim2.new(0, 200, 0, 9),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -700,7 +719,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 265, 0, 0),
                                 Size = UDim2.new(0, 56, 0, 20),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = "[ NONE ]",
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -752,7 +771,7 @@ end
                                 Name = "Always",
                                 BackgroundTransparency = 1,
                                 Size = UDim2.new(1, 0, 0, 25),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = "Always",
                                 TextColor3 = Color3.fromRGB(84, 101, 255),
                                 TextSize = 14,
@@ -763,7 +782,7 @@ end
                                 Name = "Hold",
                                 BackgroundTransparency = 1,
                                 Size = UDim2.new(1, 0, 0, 25),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = "Hold",
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -774,7 +793,7 @@ end
                                 Name = "Toggle",
                                 BackgroundTransparency = 1,
                                 Size = UDim2.new(1, 0, 0, 25),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = "Toggle",
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -920,7 +939,7 @@ end
                                 Position = UDim2.new(0, 265, 0.5, 0),
                                 Size = UDim2.new(0, 35, 0, 11),
                                 AutoButtonColor = false,
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = "",
                                 TextXAlignment = Enum.TextXAlignment.Right,
                             }, ToggleButton)
@@ -1209,7 +1228,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 6, 0, 0),
                             Size = UDim2.new(0, 250, 1, 0),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = value.Dropdown,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1228,7 +1247,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 9, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1335,7 +1354,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 8, 0, 0),
                                 Size = UDim2.new(0, 245, 1, 0),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1415,7 +1434,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 6, 0, 0),
                             Size = UDim2.new(0, 250, 1, 0),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = value.Dropdown,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1434,7 +1453,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 9, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1584,7 +1603,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 8, 0, 0),
                                 Size = UDim2.new(0, 245, 1, 0),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1653,7 +1672,7 @@ end
                             Position = UDim2.new(0.5, 0, 0.5, 0),
                             Size = UDim2.new(0, 215, 0, 20),
                             AutoButtonColor = false,
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1701,7 +1720,7 @@ end
                             BorderColor3 = Color3.fromRGB(0, 0, 0),
                             Position = UDim2.new(0.5, 0, 0.5, 0),
                             Size = UDim2.new(0, 215, 0, 20),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1819,7 +1838,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 7, 0, 0),
                                 Size = UDim2.new(0, 210, 1, 0),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1897,7 +1916,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 7, 0, 0),
                                 Size = UDim2.new(0, 210, 1, 0),
-                                Font = Enum.Font.Ubuntu,
+                                FontFace = FONT,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1997,7 +2016,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 9, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -2032,7 +2051,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 69, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            Font = Enum.Font.Ubuntu,
+                            FontFace = FONT,
                             Text = value.Slider,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -2139,39 +2158,31 @@ end
     -- ================================================================
     do
         local settingsTab = menu.new_tab("Settings")
+
+        -- ── General ──────────────────────────────────────────────
         local generalSection = settingsTab.new_section("General")
 
-        -- General / Left sector: toggle key rebind
-        local generalSector = generalSection.new_sector("Menu Key", "Left")
-        local rebindElement = generalSector.element("Button", "Rebind Toggle Key", {}, function()
+        local keySector = generalSection.new_sector("Menu Key", "Left")
+        -- Clicking this button arms rebinding; next key press is captured by the
+        -- main InputBegan handler which already checks isRebinding first.
+        keySector.element("Button", "Click then press key", {}, function()
             isRebinding = true
         end)
-        -- update button text when rebind completes
-        uis.InputBegan:Connect(function(input)
-            if not isRebinding then return end
-            isRebinding = false
-            if input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode ~= Enum.KeyCode.Escape then
-                currentKey = input.KeyCode
-            end
-        end)
 
-        -- General / Right sector: opacity slider
         local opacitySector = generalSection.new_sector("Opacity", "Right")
         opacitySector.element("Slider", "Menu Opacity", {
-            default = { Slider = 1 },
-            min = 0.3,
-            max = 1,
-            float = 0.01,
+            default = 100,
+            min = 30,
+            max = 100,
+            float = 1,
         }, function(value)
-            ImageLabel.BackgroundTransparency = 1 - value.Slider
+            ImageLabel.BackgroundTransparency = 1 - (value.Slider / 100)
         end)
 
-        -- Appearance section
+        -- ── Appearance ───────────────────────────────────────────
         local appSection = settingsTab.new_section("Appearance")
 
-        -- Accent color sector: one toggle per preset color using Button elements
         local accentSector = appSection.new_sector("Accent Color", "Left")
-
         local colorPresets = {
             { name = "Blue",   color = Color3.fromRGB(84,  101, 255) },
             { name = "Red",    color = Color3.fromRGB(255, 72,  72 ) },
@@ -2180,10 +2191,10 @@ end
             { name = "Purple", color = Color3.fromRGB(200, 80,  255) },
             { name = "Cyan",   color = Color3.fromRGB(40,  200, 220) },
         }
-
         for _, preset in ipairs(colorPresets) do
             local col = preset.color
             accentSector.element("Button", preset.name, {}, function()
+                -- recolor all section gradient decorations
                 for _, obj in ipairs(ImageLabel:GetDescendants()) do
                     if obj.Name == "SectionDecoration" then
                         for _, g in ipairs(obj:GetChildren()) do
@@ -2196,18 +2207,36 @@ end
                             end
                         end
                     end
+                    -- recolor active toggle frames (not the grey "off" ones)
                     if obj.Name == "ToggleFrame" then
-                        local r, g, b = obj.BackgroundColor3.R, obj.BackgroundColor3.G, obj.BackgroundColor3.B
-                        local isOff = math.abs(r - 30/255) < 0.02 and math.abs(g - 30/255) < 0.02 and math.abs(b - 30/255) < 0.02
-                        if not isOff then obj.BackgroundColor3 = col end
+                        local bc = obj.BackgroundColor3
+                        local isOff = math.abs(bc.R - 30/255) < 0.02
+                                   and math.abs(bc.G - 30/255) < 0.02
+                                   and math.abs(bc.B - 30/255) < 0.02
+                        if not isOff then
+                            obj.BackgroundColor3 = col
+                        end
+                    end
+                    -- recolor slider fill frames
+                    if obj.Name == "SliderFrame" then
+                        for _, g in ipairs(obj:GetChildren()) do
+                            if g:IsA("UIGradient") then
+                                g.Color = ColorSequence.new{
+                                    ColorSequenceKeypoint.new(0, col),
+                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(
+                                        math.clamp(col.R * 255 * 0.7, 0, 255)/255,
+                                        math.clamp(col.G * 255 * 0.7, 0, 255)/255,
+                                        math.clamp(col.B * 255 * 0.7, 0, 255)/255
+                                    )),
+                                }
+                            end
+                        end
                     end
                 end
             end)
         end
 
-        -- Window size sector
         local windowSector = appSection.new_sector("Window Size", "Right")
-
         local sizePresets = {
             { name = "Small",   size = UDim2.new(0, 600, 0, 430) },
             { name = "Default", size = UDim2.new(0, 700, 0, 500) },
@@ -2218,10 +2247,30 @@ end
             windowSector.element("Button", preset.name, {}, function()
                 if not minimized then
                     fullSize = sz
-                    library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = sz})
+                    library:tween(ImageLabel,
+                        TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+                        {Size = sz}
+                    )
                 end
             end)
         end
+
+        -- ── Config ───────────────────────────────────────────────
+        local cfgSection = settingsTab.new_section("Config")
+
+        local saveSector = cfgSection.new_sector("Save", "Left")
+        saveSector.element("Button", "Save Config", {}, function()
+            pcall(function()
+                menu.save_cfg("default")
+            end)
+        end)
+
+        local loadSector = cfgSection.new_sector("Load", "Right")
+        loadSector.element("Button", "Load Config", {}, function()
+            pcall(function()
+                menu.load_cfg("default")
+            end)
+        end)
     end
 
     return menu
