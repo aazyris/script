@@ -27,7 +27,51 @@ function library:console(func)
     func(("\n"):rep(57))
 end
 
-library.signal = loadstring(game:HttpGet("https://raw.githubusercontent.com/Quenty/NevermoreEngine/version2/Modules/Shared/Events/Signal.lua"))()
+-- Inline Signal (no HTTP dependency)
+do
+    local HttpService = game:GetService("HttpService")
+    local Signal = {}
+    Signal.__index = Signal
+    Signal.ClassName = "Signal"
+    function Signal.new()
+        local self = setmetatable({}, Signal)
+        self._bindableEvent = Instance.new("BindableEvent")
+        self._argMap = {}
+        self._bindableEvent.Event:Connect(function(key)
+            self._argMap[key] = nil
+            if (not self._bindableEvent) and (not next(self._argMap)) then
+                self._argMap = nil
+            end
+        end)
+        return self
+    end
+    function Signal:Fire(...)
+        if not self._bindableEvent then return end
+        local args = table.pack(...)
+        local key = HttpService:GenerateGUID(false)
+        self._argMap[key] = args
+        self._bindableEvent:Fire(key)
+    end
+    function Signal:Connect(handler)
+        return self._bindableEvent.Event:Connect(function(key)
+            local args = self._argMap[key]
+            if args then handler(table.unpack(args, 1, args.n)) end
+        end)
+    end
+    function Signal:Wait()
+        local key = self._bindableEvent.Event:Wait()
+        local args = self._argMap[key]
+        if args then return table.unpack(args, 1, args.n) end
+    end
+    function Signal:Destroy()
+        if self._bindableEvent then
+            self._bindableEvent:Destroy()
+            self._bindableEvent = nil
+        end
+        setmetatable(self, nil)
+    end
+    library.signal = Signal
+end
 
 local local_player = game:GetService("Players").LocalPlayer
 local mouse = local_player:GetMouse()
@@ -153,7 +197,11 @@ function library.new(library_title, cfg_location)
         ScreenGui.Enabled = state
     end
 
+    local currentKey = Enum.KeyCode.Insert
+    local isRebinding = false
+
     uis.InputBegan:Connect(function(key)
+        if isRebinding then return end
         if key.KeyCode ~= currentKey then return end
 
 		ScreenGui.Enabled = not ScreenGui.Enabled
@@ -198,6 +246,42 @@ function library.new(library_title, cfg_location)
         RichText = true,
     }, ImageLabel)
 
+    -- Minimize button (top-right of title bar)
+    local minimized = false
+    local fullSize = UDim2.new(0, 700, 0, 500)
+    local miniSize = UDim2.new(0, 700, 0, 30)
+
+    local MinimizeBtn = library:create("TextButton", {
+        Name = "MinimizeBtn",
+        AnchorPoint = Vector2.new(1, 0.5),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -8, 0.5, 0),
+        Size = UDim2.new(0, 20, 0, 20),
+        Font = Enum.Font.Ubuntu,
+        Text = "▼",
+        TextColor3 = Color3.fromRGB(150, 150, 150),
+        TextSize = 14,
+        AutoButtonColor = false,
+        ZIndex = 5,
+    }, Title)
+
+    MinimizeBtn.MouseEnter:Connect(function()
+        library:tween(MinimizeBtn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255, 255, 255)})
+    end)
+    MinimizeBtn.MouseLeave:Connect(function()
+        library:tween(MinimizeBtn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 150, 150)})
+    end)
+    MinimizeBtn.MouseButton1Down:Connect(function()
+        minimized = not minimized
+        if minimized then
+            MinimizeBtn.Text = "▲"
+            library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = miniSize})
+        else
+            MinimizeBtn.Text = "▼"
+            library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = fullSize})
+        end
+    end)
+
     local TabButtons = library:create("Frame", {
         Name = "TabButtons",
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
@@ -217,87 +301,6 @@ function library.new(library_title, cfg_location)
         Position = UDim2.new(0, 102, 0, 42),
         Size = UDim2.new(0, 586, 0, 446),
     }, ImageLabel)
-
-    -- SettingsPanel: always-visible panel pinned to bottom of sidebar
-    local SettingsPanel = library:create("Frame", {
-        Name = "SettingsPanel",
-        BackgroundColor3 = Color3.fromRGB(10, 10, 10),
-        BorderColor3 = Color3.fromRGB(30, 30, 30),
-        AnchorPoint = Vector2.new(0, 1),
-        Position = UDim2.new(0, 12, 1, -8),
-        Size = UDim2.new(0, 76, 0, 70),
-    }, ImageLabel)
-
-    -- separator line above settings
-    library:create("Frame", {
-        Name = "Separator",
-        BackgroundColor3 = Color3.fromRGB(78, 93, 234),
-        BorderSizePixel = 0,
-        Size = UDim2.new(1, 0, 0, 1),
-    }, SettingsPanel)
-
-    local SettingsUID = library:create("UIListLayout", {
-        HorizontalAlignment = Enum.HorizontalAlignment.Center,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
-        Padding = UDim.new(0, 4),
-    }, SettingsPanel)
-
-    -- Keybind row: shows current toggle key
-    local KeyLabel = library:create("TextLabel", {
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 14),
-        Font = Enum.Font.Ubuntu,
-        Text = "Key: INSERT",
-        TextColor3 = Color3.fromRGB(100, 100, 100),
-        TextSize = 12,
-    }, SettingsPanel)
-
-    -- Toggle key button: click to rebind
-    local BindButton = library:create("TextButton", {
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        BorderColor3 = Color3.fromRGB(40, 40, 40),
-        Size = UDim2.new(1, -6, 0, 18),
-        Font = Enum.Font.Ubuntu,
-        Text = "[ REBIND ]",
-        TextColor3 = Color3.fromRGB(84, 101, 255),
-        TextSize = 12,
-        AutoButtonColor = false,
-    }, SettingsPanel)
-
-    -- Rebind logic
-    local currentKey = Enum.KeyCode.Insert
-    local isRebinding = false
-
-    BindButton.MouseButton1Down:Connect(function()
-        if isRebinding then return end
-        isRebinding = true
-        BindButton.Text = "[ ... ]"
-        BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    end)
-
-    uis.InputBegan:Connect(function(input, gpe)
-        if isRebinding then
-            isRebinding = false
-            if input.KeyCode ~= Enum.KeyCode.Unknown then
-                currentKey = input.KeyCode
-                KeyLabel.Text = "Key: "..input.KeyCode.Name:upper()
-                BindButton.Text = "[ REBIND ]"
-                BindButton.TextColor3 = Color3.fromRGB(84, 101, 255)
-            else
-                BindButton.Text = "[ REBIND ]"
-                BindButton.TextColor3 = Color3.fromRGB(84, 101, 255)
-            end
-        end
-    end)
-
-    BindButton.MouseEnter:Connect(function()
-        if not isRebinding then
-            library:tween(BindButton, TweenInfo.new(0.15), {BorderColor3 = Color3.fromRGB(78, 93, 234)})
-        end
-    end)
-    BindButton.MouseLeave:Connect(function()
-        library:tween(BindButton, TweenInfo.new(0.15), {BorderColor3 = Color3.fromRGB(40, 40, 40)})
-    end)
 
 	if syn then
     local GetName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
@@ -2124,6 +2127,288 @@ end
         end
 
         return tab
+    end
+
+    -- ================================================================
+    --  Built-in Settings Tab (always last)
+    -- ================================================================
+    do
+        local settingsTabBtn = library:create("TextButton", {
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 76, 0, 40),
+            Text = "",
+        }, TabButtons)
+
+        local settingsTabLabel = library:create("TextLabel", {
+            Name = "ImageLabel",
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Size = UDim2.new(1, -4, 1, -4),
+            Font = Enum.Font.Ubuntu,
+            Text = "⚙",
+            TextColor3 = Color3.fromRGB(100, 100, 100),
+            TextSize = 18,
+        }, settingsTabBtn)
+
+        local settingsTab = library:create("Frame", {
+            Name = "SettingsTab",
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Visible = false,
+        }, Tabs)
+
+        -- Content area
+        local settingsContent = library:create("ScrollingFrame", {
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 8, 0, 8),
+            Size = UDim2.new(1, -16, 1, -16),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 2,
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+            BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
+        }, settingsTab)
+
+        local settingsLayout = library:create("UIListLayout", {
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 10),
+        }, settingsContent)
+
+        -- Helper: section title
+        local function settingsHeader(text)
+            library:create("TextLabel", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 20),
+                Font = Enum.Font.UbuntuBold,
+                Text = text,
+                TextColor3 = Color3.fromRGB(84, 101, 255),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            }, settingsContent)
+        end
+
+        -- Helper: row label
+        local function settingsRow(labelText, widget)
+            local row = library:create("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 24),
+            }, settingsContent)
+            library:create("TextLabel", {
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 0, 0, 0),
+                Size = UDim2.new(0.55, 0, 1, 0),
+                Font = Enum.Font.Ubuntu,
+                Text = labelText,
+                TextColor3 = Color3.fromRGB(180, 180, 180),
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            }, row)
+            if widget then widget.Parent = row end
+            return row
+        end
+
+        -- ── GENERAL ────────────────────────────────────────────────
+        settingsHeader("General")
+
+        -- Toggle key rebind
+        local keyRow = settingsRow("Menu Key")
+        local keyDisplay = library:create("TextLabel", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+            BorderColor3 = Color3.fromRGB(40, 40, 40),
+            Position = UDim2.new(1, 0, 0.5, 0),
+            Size = UDim2.new(0.42, 0, 0, 18),
+            Font = Enum.Font.Ubuntu,
+            Text = "INSERT",
+            TextColor3 = Color3.fromRGB(150, 150, 150),
+            TextSize = 12,
+        }, keyRow)
+        local rebindBtn = library:create("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+            BorderColor3 = Color3.fromRGB(40, 40, 40),
+            Position = UDim2.new(1, 0, 0.5, 0),
+            Size = UDim2.new(0.42, 0, 0, 18),
+            Font = Enum.Font.Ubuntu,
+            Text = "INSERT",
+            TextColor3 = Color3.fromRGB(84, 101, 255),
+            TextSize = 12,
+            AutoButtonColor = false,
+        }, keyRow)
+
+        rebindBtn.MouseButton1Down:Connect(function()
+            if isRebinding then return end
+            isRebinding = true
+            rebindBtn.Text = "..."
+            rebindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        end)
+        uis.InputBegan:Connect(function(input)
+            if isRebinding then
+                isRebinding = false
+                if input.KeyCode ~= Enum.KeyCode.Unknown then
+                    currentKey = input.KeyCode
+                    local name = input.KeyCode.Name:upper()
+                    rebindBtn.Text = name
+                    rebindBtn.TextColor3 = Color3.fromRGB(84, 101, 255)
+                else
+                    rebindBtn.Text = currentKey.Name:upper()
+                    rebindBtn.TextColor3 = Color3.fromRGB(84, 101, 255)
+                end
+            end
+        end)
+
+        -- Menu opacity
+        local opacityRow = settingsRow("Menu Opacity")
+        local opacitySlider = library:create("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+            BorderColor3 = Color3.fromRGB(40, 40, 40),
+            Position = UDim2.new(1, 0, 0.5, 0),
+            Size = UDim2.new(0.42, 0, 0, 10),
+            AutoButtonColor = false,
+            Text = "",
+        }, opacityRow)
+        local opacityFill = library:create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(84, 101, 255),
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+        }, opacitySlider)
+        local opacityVal = 1
+        local function setOpacity(v)
+            opacityVal = math.clamp(v, 0.3, 1)
+            opacityFill.Size = UDim2.new(opacityVal, 0, 1, 0)
+            ImageLabel.BackgroundTransparency = 1 - opacityVal
+        end
+        setOpacity(1)
+        local draggingOpacity = false
+        opacitySlider.MouseButton1Down:Connect(function()
+            draggingOpacity = true
+            local x = math.clamp(mouse.X - opacitySlider.AbsolutePosition.X, 0, opacitySlider.AbsoluteSize.X)
+            setOpacity(x / opacitySlider.AbsoluteSize.X)
+        end)
+        uis.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then draggingOpacity = false end
+        end)
+        mouse.Move:Connect(function()
+            if not draggingOpacity then return end
+            local x = math.clamp(mouse.X - opacitySlider.AbsolutePosition.X, 0, opacitySlider.AbsoluteSize.X)
+            setOpacity(x / opacitySlider.AbsoluteSize.X)
+        end)
+
+        -- ── VISUALS ────────────────────────────────────────────────
+        settingsHeader("Accent Color")
+
+        local accentRow = settingsRow("Color")
+        local accentBtn = library:create("TextButton", {
+            AnchorPoint = Vector2.new(1, 0.5),
+            BackgroundColor3 = Color3.fromRGB(84, 101, 255),
+            BorderColor3 = Color3.fromRGB(0, 0, 0),
+            Position = UDim2.new(1, 0, 0.5, 0),
+            Size = UDim2.new(0.12, 0, 0, 14),
+            AutoButtonColor = false,
+            Text = "",
+        }, accentRow)
+
+        -- quick preset swatches
+        local swatchRow = settingsRow("Presets")
+        local presets = {
+            {Color3.fromRGB(84,101,255), "Blue"},
+            {Color3.fromRGB(255,72,72),  "Red"},
+            {Color3.fromRGB(72,255,128), "Green"},
+            {Color3.fromRGB(255,200,50), "Gold"},
+        }
+        local swatchX = 0
+        for _, p in ipairs(presets) do
+            local sw = library:create("TextButton", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = p[1],
+                BorderSizePixel = 0,
+                Position = UDim2.new(0.55 + swatchX, 0, 0.5, 0),
+                Size = UDim2.new(0, 14, 0, 14),
+                AutoButtonColor = false,
+                Text = "",
+            }, swatchRow)
+            local col = p[1]
+            sw.MouseButton1Down:Connect(function()
+                accentBtn.BackgroundColor3 = col
+                -- update section decorations
+                for _, obj in ipairs(ImageLabel:GetDescendants()) do
+                    if obj.Name == "SectionDecoration" then
+                        for _, g in ipairs(obj:GetChildren()) do
+                            if g:IsA("UIGradient") then
+                                g.Color = ColorSequence.new{
+                                    ColorSequenceKeypoint.new(0, Color3.fromRGB(32,33,38)),
+                                    ColorSequenceKeypoint.new(0.5, col),
+                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(32,33,38)),
+                                }
+                            end
+                        end
+                    end
+                    if obj.Name == "ToggleFrame" and obj.BackgroundColor3 ~= Color3.fromRGB(30,30,30) then
+                        obj.BackgroundColor3 = col
+                    end
+                end
+            end)
+            swatchX = swatchX + 0.115
+        end
+
+        -- ── WINDOW ─────────────────────────────────────────────────
+        settingsHeader("Window")
+
+        -- Resolution presets
+        local resRow = settingsRow("Size Preset")
+        local resSizes = {
+            {UDim2.new(0,700,0,500), "Default"},
+            {UDim2.new(0,800,0,550), "Large"},
+            {UDim2.new(0,600,0,450), "Small"},
+        }
+        local resX = 0
+        for _, r in ipairs(resSizes) do
+            local rb = library:create("TextButton", {
+                AnchorPoint = Vector2.new(0, 0.5),
+                BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+                BorderColor3 = Color3.fromRGB(40, 40, 40),
+                Position = UDim2.new(0.55 + resX, 0, 0.5, 0),
+                Size = UDim2.new(0, 50, 0, 16),
+                Font = Enum.Font.Ubuntu,
+                Text = r[2],
+                TextColor3 = Color3.fromRGB(150, 150, 150),
+                TextSize = 11,
+                AutoButtonColor = false,
+            }, resRow)
+            local sz = r[1]
+            rb.MouseButton1Down:Connect(function()
+                if not minimized then
+                    fullSize = sz
+                    library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = sz})
+                end
+            end)
+            resX = resX + 0.145
+        end
+
+        -- Tab switch
+        settingsTabBtn.MouseButton1Down:Connect(function()
+            if selected_tab == settingsTabBtn then return end
+            for _, TButtons in pairs(TabButtons:GetChildren()) do
+                if not TButtons:IsA("TextButton") then continue end
+                library:tween(TButtons:FindFirstChildOfClass("TextLabel") or TButtons:FindFirstChildWhichIsA("TextLabel"), TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
+            end
+            for _, T in pairs(Tabs:GetChildren()) do T.Visible = false end
+            settingsTab.Visible = true
+            selected_tab = settingsTabBtn
+            library:tween(settingsTabLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(84, 101, 255)})
+        end)
+        settingsTabBtn.MouseEnter:Connect(function()
+            if selected_tab == settingsTabBtn then return end
+            library:tween(settingsTabLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255, 255, 255)})
+        end)
+        settingsTabBtn.MouseLeave:Connect(function()
+            if selected_tab == settingsTabBtn then return end
+            library:tween(settingsTabLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
+        end)
     end
 
     return menu
