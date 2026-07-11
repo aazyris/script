@@ -2138,319 +2138,90 @@ end
     --  Built-in Settings Tab (always last)
     -- ================================================================
     do
-        local settingsTabBtn = library:create("TextButton", {
-            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 76, 0, 40),
-            Text = "",
-        }, TabButtons)
-        local settingsTabLabel = library:create("TextLabel", {
-            Name = "ImageLabel",
-            AnchorPoint = Vector2.new(0.5, 0.5),
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(1, -4, 1, -4),
-            Font = Enum.Font.Ubuntu,
-            Text = "Settings",
-            TextColor3 = Color3.fromRGB(100, 100, 100),
-            TextSize = 14,
-            TextWrapped = true,
-        }, settingsTabBtn)
-        local settingsTab = library:create("Frame", {
-            Name = "SettingsTab",
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 1, 0),
-            Visible = false,
-        }, Tabs)
-        local settingsScroll = library:create("ScrollingFrame", {
-            BackgroundTransparency = 1,
-            BorderSizePixel = 0,
-            Position = UDim2.new(0, 10, 0, 10),
-            Size = UDim2.new(1, -20, 1, -20),
-            CanvasSize = UDim2.new(0, 0, 0, 0),
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
-            ScrollBarThickness = 2,
-            ScrollBarImageColor3 = Color3.fromRGB(84, 101, 255),
-            TopImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-            BottomImage = "rbxasset://textures/ui/Scroll/scroll-middle.png",
-        }, settingsTab)
-        library:create("UIListLayout", {
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8),
-        }, settingsScroll)
-        -- makeCard: dark card with colored title bar, returns body frame
-        local function makeCard(title)
-            local card = library:create("Frame", {
-                BackgroundColor3 = Color3.fromRGB(10, 10, 10),
-                BorderColor3 = Color3.fromRGB(25, 25, 25),
-                Size = UDim2.new(1, 0, 0, 0),
-                AutomaticSize = Enum.AutomaticSize.Y,
-            }, settingsScroll)
-            library:create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,0)}, card)
-            local titleBar = library:create("Frame", {
-                BackgroundColor3 = Color3.fromRGB(18, 18, 18),
-                BorderSizePixel = 0,
-                Size = UDim2.new(1, 0, 0, 22),
-                LayoutOrder = 0,
-            }, card)
-            library:create("Frame", {
-                BackgroundColor3 = Color3.fromRGB(84, 101, 255),
-                BorderSizePixel = 0,
-                Size = UDim2.new(0, 3, 1, 0),
-            }, titleBar)
-            library:create("TextLabel", {
-                BackgroundTransparency = 1,
-                Position = UDim2.new(0, 10, 0, 0),
-                Size = UDim2.new(1, -10, 1, 0),
-                Font = Enum.Font.Ubuntu,
-                Text = title,
-                TextColor3 = Color3.fromRGB(200, 200, 200),
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left,
-            }, titleBar)
-            local body = library:create("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 0),
-                AutomaticSize = Enum.AutomaticSize.Y,
-                LayoutOrder = 1,
-            }, card)
-            library:create("UIListLayout", {SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0,1)}, body)
-            library:create("UIPadding", {
-                PaddingLeft = UDim.new(0,8), PaddingRight = UDim.new(0,8),
-                PaddingTop = UDim.new(0,6),  PaddingBottom = UDim.new(0,6),
-            }, body)
-            return body
-        end
-        -- makeRow: label left, returns row frame for adding controls
-        local function makeRow(parent, labelText, height)
-            local row = library:create("Frame", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, height or 26),
-            }, parent)
-            library:create("TextLabel", {
-                BackgroundTransparency = 1,
-                Size = UDim2.new(0.5, 0, 1, 0),
-                Font = Enum.Font.Ubuntu,
-                Text = labelText,
-                TextColor3 = Color3.fromRGB(170, 170, 170),
-                TextSize = 13,
-                TextXAlignment = Enum.TextXAlignment.Left,
-            }, row)
-            return row
-        end
-        -- makeBtn: small styled button anchored right
-        local function makeBtn(parent, text)
-            local btn = library:create("TextButton", {
-                AnchorPoint = Vector2.new(1, 0.5),
-                BackgroundColor3 = Color3.fromRGB(22, 22, 22),
-                BorderColor3 = Color3.fromRGB(40, 40, 40),
-                Position = UDim2.new(1, 0, 0.5, 0),
-                Size = UDim2.new(0.46, 0, 0, 18),
-                Font = Enum.Font.Ubuntu,
-                Text = text,
-                TextColor3 = Color3.fromRGB(84, 101, 255),
-                TextSize = 12,
-                AutoButtonColor = false,
-            }, parent)
-            btn.MouseEnter:Connect(function()
-                library:tween(btn, TweenInfo.new(0.15), {BorderColor3 = Color3.fromRGB(84,101,255)})
-            end)
-            btn.MouseLeave:Connect(function()
-                library:tween(btn, TweenInfo.new(0.15), {BorderColor3 = Color3.fromRGB(40,40,40)})
-            end)
-            return btn
-        end
-        -- makeSlider: draggable slider anchored right
-        local function makeSlider(parent, default, minV, maxV, onChange)
-            local track = library:create("Frame", {
-                AnchorPoint = Vector2.new(1, 0.5),
-                BackgroundColor3 = Color3.fromRGB(22, 22, 22),
-                BorderColor3 = Color3.fromRGB(40, 40, 40),
-                Position = UDim2.new(1, 0, 0.5, 0),
-                Size = UDim2.new(0.46, 0, 0, 8),
-            }, parent)
-            local fill = library:create("Frame", {
-                BackgroundColor3 = Color3.fromRGB(84, 101, 255),
-                BorderSizePixel = 0,
-                Size = UDim2.new((default-minV)/(maxV-minV), 0, 1, 0),
-            }, track)
-            local dragging = false
-            local function update(mx)
-                local w = track.AbsoluteSize.X
-                if w <= 0 then return end
-                local pct = math.clamp((mx - track.AbsolutePosition.X) / w, 0, 1)
-                fill.Size = UDim2.new(pct, 0, 1, 0)
-                onChange(minV + (maxV - minV) * pct)
-            end
-            track.InputBegan:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = true
-                    update(mouse.X)
-                end
-            end)
-            uis.InputEnded:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
-            end)
-            uis.InputChanged:Connect(function(i)
-                if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
-                    update(mouse.X)
-                end
-            end)
-            return track
-        end
-        -- ── GENERAL card ──
-        local genBody = makeCard("General")
-        local keyRow = makeRow(genBody, "Toggle Key")
-        local rebindBtn = makeBtn(keyRow, currentKey.Name:upper())
-        rebindBtn.MouseButton1Down:Connect(function()
-            if isRebinding then return end
+        local settingsTab = menu.new_tab("Settings")
+        local generalSection = settingsTab.new_section("General")
+
+        -- General / Left sector: toggle key rebind
+        local generalSector = generalSection.new_sector("Menu Key", "Left")
+        local rebindElement = generalSector.element("Button", "Rebind Toggle Key", {}, function()
             isRebinding = true
-            rebindBtn.Text = "[ ... ]"
-            rebindBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
         end)
-        -- single InputBegan handler for rebind (isRebinding already guards the menu toggle handler too)
+        -- update button text when rebind completes
         uis.InputBegan:Connect(function(input)
             if not isRebinding then return end
             isRebinding = false
             if input.KeyCode ~= Enum.KeyCode.Unknown and input.KeyCode ~= Enum.KeyCode.Escape then
                 currentKey = input.KeyCode
-                rebindBtn.Text = input.KeyCode.Name:upper()
-            else
-                rebindBtn.Text = currentKey.Name:upper()
             end
-            rebindBtn.TextColor3 = Color3.fromRGB(84, 101, 255)
         end)
-        local opRow = makeRow(genBody, "Opacity")
-        makeSlider(opRow, 1, 0.3, 1, function(v)
-            ImageLabel.BackgroundTransparency = 1 - v
+
+        -- General / Right sector: opacity slider
+        local opacitySector = generalSection.new_sector("Opacity", "Right")
+        opacitySector.element("Slider", "Menu Opacity", {
+            default = { Slider = 1 },
+            min = 0.3,
+            max = 1,
+            float = 0.01,
+        }, function(value)
+            ImageLabel.BackgroundTransparency = 1 - value.Slider
         end)
-        -- ── APPEARANCE card ──
-        local appBody = makeCard("Appearance")
-        local accentRow = makeRow(appBody, "Accent Color", 28)
-        local accentColor = Color3.fromRGB(84, 101, 255)
+
+        -- Appearance section
+        local appSection = settingsTab.new_section("Appearance")
+
+        -- Accent color sector: one toggle per preset color using Button elements
+        local accentSector = appSection.new_sector("Accent Color", "Left")
+
         local colorPresets = {
-            Color3.fromRGB(84,101,255), Color3.fromRGB(255,72,72),
-            Color3.fromRGB(60,200,110), Color3.fromRGB(255,180,40),
-            Color3.fromRGB(200,80,255), Color3.fromRGB(40,200,220),
+            { name = "Blue",   color = Color3.fromRGB(84,  101, 255) },
+            { name = "Red",    color = Color3.fromRGB(255, 72,  72 ) },
+            { name = "Green",  color = Color3.fromRGB(60,  200, 110) },
+            { name = "Gold",   color = Color3.fromRGB(255, 180, 40 ) },
+            { name = "Purple", color = Color3.fromRGB(200, 80,  255) },
+            { name = "Cyan",   color = Color3.fromRGB(40,  200, 220) },
         }
-        local swatchBox = library:create("Frame", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            BackgroundTransparency = 1,
-            Position = UDim2.new(1, 0, 0.5, 0),
-            Size = UDim2.new(0.52, 0, 0, 20),
-        }, accentRow)
-        library:create("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 4),
-        }, swatchBox)
-        local function applyAccent(col)
-            accentColor = col
-            for _, obj in ipairs(ImageLabel:GetDescendants()) do
-                if obj.Name == "SectionDecoration" then
-                    for _, g in ipairs(obj:GetChildren()) do
-                        if g:IsA("UIGradient") then
-                            g.Color = ColorSequence.new{
-                                ColorSequenceKeypoint.new(0,   Color3.fromRGB(32,33,38)),
-                                ColorSequenceKeypoint.new(0.5, col),
-                                ColorSequenceKeypoint.new(1,   Color3.fromRGB(32,33,38)),
-                            }
+
+        for _, preset in ipairs(colorPresets) do
+            local col = preset.color
+            accentSector.element("Button", preset.name, {}, function()
+                for _, obj in ipairs(ImageLabel:GetDescendants()) do
+                    if obj.Name == "SectionDecoration" then
+                        for _, g in ipairs(obj:GetChildren()) do
+                            if g:IsA("UIGradient") then
+                                g.Color = ColorSequence.new{
+                                    ColorSequenceKeypoint.new(0,   Color3.fromRGB(32, 33, 38)),
+                                    ColorSequenceKeypoint.new(0.5, col),
+                                    ColorSequenceKeypoint.new(1,   Color3.fromRGB(32, 33, 38)),
+                                }
+                            end
                         end
                     end
-                end
-                -- Only recolor active (enabled) toggle indicators
-                if obj.Name == "ToggleFrame" then
-                    local r, g, b = obj.BackgroundColor3.R, obj.BackgroundColor3.G, obj.BackgroundColor3.B
-                    local isOff = (math.abs(r - 30/255) < 0.02 and math.abs(g - 30/255) < 0.02 and math.abs(b - 30/255) < 0.02)
-                    if not isOff then
-                        obj.BackgroundColor3 = col
+                    if obj.Name == "ToggleFrame" then
+                        local r, g, b = obj.BackgroundColor3.R, obj.BackgroundColor3.G, obj.BackgroundColor3.B
+                        local isOff = math.abs(r - 30/255) < 0.02 and math.abs(g - 30/255) < 0.02 and math.abs(b - 30/255) < 0.02
+                        if not isOff then obj.BackgroundColor3 = col end
                     end
                 end
-            end
-        end
-        for _, col in ipairs(colorPresets) do
-            local sw = library:create("TextButton", {
-                BackgroundColor3 = col, BorderSizePixel = 0,
-                Size = UDim2.new(0,16,0,16), Text = "", AutoButtonColor = false,
-            }, swatchBox)
-            local c = col
-            sw.MouseEnter:Connect(function()
-                library:tween(sw, TweenInfo.new(0.1), {Size = UDim2.new(0,18,0,18)})
             end)
-            sw.MouseLeave:Connect(function()
-                library:tween(sw, TweenInfo.new(0.1), {Size = UDim2.new(0,16,0,16)})
-            end)
-            sw.MouseButton1Down:Connect(function() applyAccent(c) end)
         end
-        -- ── WINDOW card ──
-        local winBody = makeCard("Window")
-        local sizeRow = makeRow(winBody, "Size", 28)
+
+        -- Window size sector
+        local windowSector = appSection.new_sector("Window Size", "Right")
+
         local sizePresets = {
-            {label="Small",   size=UDim2.new(0,600,0,430)},
-            {label="Default", size=UDim2.new(0,700,0,500)},
-            {label="Large",   size=UDim2.new(0,820,0,560)},
+            { name = "Small",   size = UDim2.new(0, 600, 0, 430) },
+            { name = "Default", size = UDim2.new(0, 700, 0, 500) },
+            { name = "Large",   size = UDim2.new(0, 820, 0, 560) },
         }
-        local sizeBtnBox = library:create("Frame", {
-            AnchorPoint = Vector2.new(1, 0.5),
-            BackgroundTransparency = 1,
-            Position = UDim2.new(1, 0, 0.5, 0),
-            Size = UDim2.new(0.52, 0, 1, 0),
-        }, sizeRow)
-        library:create("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            HorizontalAlignment = Enum.HorizontalAlignment.Right,
-            Padding = UDim.new(0, 4),
-        }, sizeBtnBox)
-        for _, s in ipairs(sizePresets) do
-            local sb = library:create("TextButton", {
-                BackgroundColor3 = Color3.fromRGB(22,22,22),
-                BorderColor3 = Color3.fromRGB(40,40,40),
-                Size = UDim2.new(0,52,0,18),
-                Font = Enum.Font.Ubuntu,
-                Text = s.label,
-                TextColor3 = Color3.fromRGB(150,150,150),
-                TextSize = 12, AutoButtonColor = false,
-            }, sizeBtnBox)
-            local sz = s.size
-            sb.MouseEnter:Connect(function()
-                library:tween(sb, TweenInfo.new(0.15), {TextColor3=Color3.fromRGB(255,255,255), BorderColor3=Color3.fromRGB(84,101,255)})
-            end)
-            sb.MouseLeave:Connect(function()
-                library:tween(sb, TweenInfo.new(0.15), {TextColor3=Color3.fromRGB(150,150,150), BorderColor3=Color3.fromRGB(40,40,40)})
-            end)
-            sb.MouseButton1Down:Connect(function()
+        for _, preset in ipairs(sizePresets) do
+            local sz = preset.size
+            windowSector.element("Button", preset.name, {}, function()
                 if not minimized then
                     fullSize = sz
                     library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = sz})
                 end
             end)
         end
-        -- ── tab switching ──
-        settingsTabBtn.MouseButton1Down:Connect(function()
-            if selected_tab == settingsTabBtn then return end
-            for _, tb in pairs(TabButtons:GetChildren()) do
-                if not tb:IsA("TextButton") then continue end
-                local lbl = tb:FindFirstChild("ImageLabel")
-                if lbl then
-                    library:tween(lbl, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100,100,100)})
-                end
-            end
-            for _, T in pairs(Tabs:GetChildren()) do T.Visible = false end
-            settingsTab.Visible = true
-            selected_tab = settingsTabBtn
-            library:tween(settingsTabLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(84,101,255)})
-        end)
-        settingsTabBtn.MouseEnter:Connect(function()
-            if selected_tab == settingsTabBtn then return end
-            library:tween(settingsTabLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255,255,255)})
-        end)
-        settingsTabBtn.MouseLeave:Connect(function()
-            if selected_tab == settingsTabBtn then return end
-            library:tween(settingsTabLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100,100,100)})
-        end)
     end
 
     return menu
