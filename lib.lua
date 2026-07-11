@@ -144,18 +144,6 @@ function library.new(library_title, cfg_location)
 		syn.protect_gui(ScreenGui)
 	end
 
-    local Cursor = library:create("ImageLabel", {
-        Name = "Cursor",
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0, 17, 0, 17),
-        Image = "rbxassetid://7205257578",
-        ZIndex = 6969,
-    }, ScreenGui)
-
-    rs.RenderStepped:Connect(function()
-        Cursor.Position = UDim2.new(0, mouse.X, 0, mouse.Y + 36)
-    end)
-
 	ScreenGui.Parent = game:GetService("CoreGui")
 
     function menu.IsOpen()
@@ -166,7 +154,7 @@ function library.new(library_title, cfg_location)
     end
 
     uis.InputBegan:Connect(function(key)
-        if key.KeyCode ~= Enum.KeyCode.Insert then return end
+        if key.KeyCode ~= currentKey then return end
 
 		ScreenGui.Enabled = not ScreenGui.Enabled
         menu.open = ScreenGui.Enabled
@@ -181,7 +169,7 @@ function library.new(library_title, cfg_location)
         Name = "Main",
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
-        BorderColor3 = Color3.fromRGB(78, 93, 234),
+        BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(0, 700, 0, 500),
         Image = "http://www.roblox.com/asset/?id=7300333488",
@@ -229,6 +217,87 @@ function library.new(library_title, cfg_location)
         Position = UDim2.new(0, 102, 0, 42),
         Size = UDim2.new(0, 586, 0, 446),
     }, ImageLabel)
+
+    -- SettingsPanel: always-visible panel pinned to bottom of sidebar
+    local SettingsPanel = library:create("Frame", {
+        Name = "SettingsPanel",
+        BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+        BorderColor3 = Color3.fromRGB(30, 30, 30),
+        AnchorPoint = Vector2.new(0, 1),
+        Position = UDim2.new(0, 12, 1, -8),
+        Size = UDim2.new(0, 76, 0, 70),
+    }, ImageLabel)
+
+    -- separator line above settings
+    library:create("Frame", {
+        Name = "Separator",
+        BackgroundColor3 = Color3.fromRGB(78, 93, 234),
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, 1),
+    }, SettingsPanel)
+
+    local SettingsUID = library:create("UIListLayout", {
+        HorizontalAlignment = Enum.HorizontalAlignment.Center,
+        VerticalAlignment = Enum.VerticalAlignment.Center,
+        Padding = UDim.new(0, 4),
+    }, SettingsPanel)
+
+    -- Keybind row: shows current toggle key
+    local KeyLabel = library:create("TextLabel", {
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 14),
+        Font = Enum.Font.Ubuntu,
+        Text = "Key: INSERT",
+        TextColor3 = Color3.fromRGB(100, 100, 100),
+        TextSize = 12,
+    }, SettingsPanel)
+
+    -- Toggle key button: click to rebind
+    local BindButton = library:create("TextButton", {
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        BorderColor3 = Color3.fromRGB(40, 40, 40),
+        Size = UDim2.new(1, -6, 0, 18),
+        Font = Enum.Font.Ubuntu,
+        Text = "[ REBIND ]",
+        TextColor3 = Color3.fromRGB(84, 101, 255),
+        TextSize = 12,
+        AutoButtonColor = false,
+    }, SettingsPanel)
+
+    -- Rebind logic
+    local currentKey = Enum.KeyCode.Insert
+    local isRebinding = false
+
+    BindButton.MouseButton1Down:Connect(function()
+        if isRebinding then return end
+        isRebinding = true
+        BindButton.Text = "[ ... ]"
+        BindButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+
+    uis.InputBegan:Connect(function(input, gpe)
+        if isRebinding then
+            isRebinding = false
+            if input.KeyCode ~= Enum.KeyCode.Unknown then
+                currentKey = input.KeyCode
+                KeyLabel.Text = "Key: "..input.KeyCode.Name:upper()
+                BindButton.Text = "[ REBIND ]"
+                BindButton.TextColor3 = Color3.fromRGB(84, 101, 255)
+            else
+                BindButton.Text = "[ REBIND ]"
+                BindButton.TextColor3 = Color3.fromRGB(84, 101, 255)
+            end
+        end
+    end)
+
+    BindButton.MouseEnter:Connect(function()
+        if not isRebinding then
+            library:tween(BindButton, TweenInfo.new(0.15), {BorderColor3 = Color3.fromRGB(78, 93, 234)})
+        end
+    end)
+    BindButton.MouseLeave:Connect(function()
+        library:tween(BindButton, TweenInfo.new(0.15), {BorderColor3 = Color3.fromRGB(40, 40, 40)})
+    end)
 
 	if syn then
     local GetName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
