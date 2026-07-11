@@ -258,7 +258,7 @@ function library.new(library_title, cfg_location)
         Position = UDim2.new(1, -8, 0.5, 0),
         Size = UDim2.new(0, 20, 0, 20),
         Font = Enum.Font.Ubuntu,
-        Text = "▼",
+        Text = "_",
         TextColor3 = Color3.fromRGB(150, 150, 150),
         TextSize = 14,
         AutoButtonColor = false,
@@ -274,11 +274,15 @@ function library.new(library_title, cfg_location)
     MinimizeBtn.MouseButton1Down:Connect(function()
         minimized = not minimized
         if minimized then
-            MinimizeBtn.Text = "▲"
+            MinimizeBtn.Text = "-"
             library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = miniSize})
+            TabButtons.Visible = false
+            Tabs.Visible = false
         else
-            MinimizeBtn.Text = "▼"
+            MinimizeBtn.Text = "_"
             library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = fullSize})
+            TabButtons.Visible = true
+            Tabs.Visible = true
         end
     end)
 
@@ -2147,9 +2151,10 @@ end
             Position = UDim2.new(0.5, 0, 0.5, 0),
             Size = UDim2.new(1, -4, 1, -4),
             Font = Enum.Font.Ubuntu,
-            Text = "⚙",
+            Text = "Settings",
             TextColor3 = Color3.fromRGB(100, 100, 100),
-            TextSize = 18,
+            TextSize = 14,
+            TextWrapped = true,
         }, settingsTabBtn)
 
         local settingsTab = library:create("Frame", {
