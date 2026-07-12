@@ -167,17 +167,17 @@ function library.new(library_title, cfg_location)
         end
 	end)
 
-    local ImageLabel = library:create("ImageButton", {
+    local ImageLabel = library:create("Frame", {
         Name = "Main",
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(0, 700, 0, 500),
-        Image = "http://www.roblox.com/asset/?id=7300333488",
-        AutoButtonColor = false,
-        Modal = true,
     }, ScreenGui)
+    
+    library:create("UICorner", { CornerRadius = UDim.new(0, 8) }, ImageLabel)
+    library:create("UIStroke", { Color = Color3.fromRGB(40, 40, 40), Thickness = 1 }, ImageLabel)
 
     function menu.GetPosition()
         return ImageLabel.Position
@@ -1877,9 +1877,9 @@ end
                     elseif type == "Slider" then
                         Border.Size = Border.Size + UDim2.new(0, 0, 0, 35)
 
-                        value = {Slider = default and default.default or 0}
+                        value = {Slider = default or 0}
 
-                        local min, max = default and default.min or 0, default and default.max or 100
+                        local min, max = data and data.min or 0, data and data.max or 100
 
                         local Slider = library:create("Frame", {
                             Name = "Slider",
