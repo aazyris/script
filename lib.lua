@@ -167,17 +167,17 @@ function library.new(library_title, cfg_location)
         end
 	end)
 
-    local ImageLabel = library:create("Frame", {
+    local ImageLabel = library:create("ImageButton", {
         Name = "Main",
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(0, 700, 0, 500),
+        Image = "http://www.roblox.com/asset/?id=7300333488",
+        AutoButtonColor = false,
+        Modal = true,
     }, ScreenGui)
-    
-    library:create("UICorner", { CornerRadius = UDim.new(0, 8) }, ImageLabel)
-    library:create("UIStroke", { Color = Color3.fromRGB(40, 40, 40), Thickness = 1 }, ImageLabel)
 
     function menu.GetPosition()
         return ImageLabel.Position
@@ -205,22 +205,19 @@ function library.new(library_title, cfg_location)
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 41),
-        Size = UDim2.new(1, -24, 0, 30),
+        Size = UDim2.new(0, 76, 0, 447),
     }, ImageLabel)
     
     local UIListLayout = library:create("UIListLayout", {
-        FillDirection = Enum.FillDirection.Horizontal,
-        HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5)
+        HorizontalAlignment = Enum.HorizontalAlignment.Center
     }, TabButtons)
 
     local Tabs = library:create("Frame", {
         Name = "Tabs",
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 12, 0, 75),
-        Size = UDim2.new(1, -24, 1, -85),
+        Position = UDim2.new(0, 102, 0, 42),
+        Size = UDim2.new(0, 586, 0, 446),
     }, ImageLabel)
 
 	if syn then
@@ -246,7 +243,7 @@ end
         local TabButton = library:create("TextButton", {
             BackgroundColor3 = Color3.fromRGB(255, 255, 255),
             BackgroundTransparency = 1,
-            Size = UDim2.new(0, 100, 1, 0),
+            Size = UDim2.new(0, 76, 0, 40),
             Font = Enum.Font.Ubuntu,
             Text = tab_name,
             TextColor3 = Color3.fromRGB(100, 100, 100),
@@ -280,7 +277,7 @@ end
             Name = "TabFrames",
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 0, 0, 29),
-            Size = UDim2.new(1, 0, 1, -29),
+            Size = UDim2.new(1, 0, 0, 418),
         }, Tab)
 
         if is_first_tab then
@@ -379,8 +376,8 @@ end
             local Left = library:create("Frame", {
                 Name = "Left",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 8, 0, 8),
-                Size = UDim2.new(0.5, -12, 1, -8),
+                Position = UDim2.new(0, 8, 0, 14),
+                Size = UDim2.new(0, 282, 0, 395),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -392,8 +389,8 @@ end
             local Right = library:create("Frame", {
                 Name = "Right",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0.5, 4, 0, 8),
-                Size = UDim2.new(0.5, -12, 1, -8),
+                Position = UDim2.new(0, 298, 0, 14),
+                Size = UDim2.new(0, 282, 0, 395),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -478,7 +475,7 @@ end
                         Name = "LineFrame",
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0, 0, 0, 0),
-                        Size = UDim2.new(1, -20, 0, thickness * 3),
+                        Size = UDim2.new(0, 250, 0, thickness * 3),
                     }, Container)
 
                     local Line = library:create("Frame", {
@@ -2041,6 +2038,29 @@ end
 
         return tab
     end
+
+    local builtInSettings = menu.new_tab("Settings")
+    local s1 = builtInSettings.new_section("Configuration")
+    
+    local s1Left = s1.new_sector("Config Manager", "Left")
+    s1Left.element("Dropdown", "Slot", { options = {"Default", "Slot 1", "Slot 2", "Slot 3"}, default = {Dropdown = "Default"} })
+    s1Left.element("Button", "Save", nil, function() menu.save_cfg("default") end)
+    s1Left.element("Button", "Load", nil, function() menu.load_cfg("default") end)
+    s1Left.element("Button", "Reset", nil, function() print("Config reset!") end)
+
+    local s1Right = s1.new_sector("Extra Config", "Right")
+    s1Right.element("Toggle", "Auto-Load Config")
+    s1Right.element("Toggle", "Anti-Screenshot")
+
+    local s2 = builtInSettings.new_section("Menu Settings")
+    
+    local s2Left = s2.new_sector("Interface", "Left")
+    s2Left.element("Toggle", "Menu Key", {default = {Toggle = true}}, function(v) end):add_keybind({Key = "Insert", Type = "Toggle"}, function() end)
+    s2Left.element("Toggle", "Watermark", {default = {Toggle = true}})
+    
+    local s2Right = s2.new_sector("Other", "Right")
+    s2Right.element("Button", "Copy Discord", nil, function() pcall(setclipboard, "https://discord.gg/aftermath") end)
+    s2Right.element("Button", "Unload Cheat", nil, function() ScreenGui:Destroy() end)
 
     return menu
 end
