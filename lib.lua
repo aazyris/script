@@ -174,10 +174,12 @@ function library.new(library_title, cfg_location)
         BorderSizePixel = 0,
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(0, 700, 0, 500),
-        Image = "http://www.roblox.com/asset/?id=7300333488",
         AutoButtonColor = false,
         Modal = true,
     }, ScreenGui)
+
+    local UICorner = Instance.new("UICorner", ImageLabel)
+    UICorner.CornerRadius = UDim.new(0, 6)
 
     function menu.GetPosition()
         return ImageLabel.Position
@@ -456,7 +458,7 @@ end
 
                 local Border = library:create("Frame", {
                     BackgroundColor3 = Color3.fromRGB(5, 5, 5),
-                    BorderColor3 = Color3.fromRGB(30, 30, 30),
+                    BorderSizePixel = 0,
                     Size = UDim2.new(1, 0, 0, 20),
                 }, actual_side)
 
