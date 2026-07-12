@@ -200,12 +200,21 @@ function library.new(library_title, cfg_location)
 
     local TabButtons = library:create("Frame", {
         Name = "TabButtons",
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BackgroundTransparency = 1,
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+        BackgroundTransparency = 0,
+        BorderSizePixel = 0,
         Position = UDim2.new(0, 0, 0, 30),
-        Size = UDim2.new(1, 0, 0, 36),
+        Size = UDim2.new(1, 0, 0, 32),
     }, ImageLabel)
-    
+
+    -- thin separator line under tab bar
+    library:create("Frame", {
+        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 1, -1),
+        Size = UDim2.new(1, 0, 0, 1),
+    }, TabButtons)
+
     local UIListLayout = library:create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         HorizontalAlignment = Enum.HorizontalAlignment.Left,
@@ -216,8 +225,8 @@ function library.new(library_title, cfg_location)
         Name = "Tabs",
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 68),
-        Size = UDim2.new(1, 0, 0, 432),
+        Position = UDim2.new(0, 0, 0, 62),
+        Size = UDim2.new(1, 0, 0, 438),
     }, ImageLabel)
 
 	if syn then
@@ -250,8 +259,14 @@ end
             TextSize = 14,
         }, TabButtons)
 
-        local TabSections = Instance.new("Frame")
-        local TabFrames = Instance.new("Frame")
+        -- active underline indicator
+        local TabIndicator = library:create("Frame", {
+            BackgroundColor3 = Color3.fromRGB(84, 101, 255),
+            BorderSizePixel = 0,
+            Position = UDim2.new(0, 8, 1, -2),
+            Size = UDim2.new(1, -16, 0, 2),
+            Visible = false,
+        }, TabButton)
 
         local Tab = library:create("Frame", {
             BackgroundTransparency = 1,
@@ -261,7 +276,6 @@ end
 
         local TabSections = library:create("Frame", {
             Name = "TabSections",
-            Parent = Tab,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 28),
             ClipsDescendants = true,
@@ -276,7 +290,7 @@ end
             Name = "TabFrames",
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 0, 0, 29),
-            Size = UDim2.new(1, 0, 0, 418),
+            Size = UDim2.new(1, 0, 1, -29),
         }, Tab)
 
         if is_first_tab then
@@ -284,6 +298,7 @@ end
             selected_tab = TabButton
 
             TabButton.TextColor3 = Color3.fromRGB(84, 101, 255)
+            TabIndicator.Visible = true
             Tab.Visible = true
         end
 
@@ -292,14 +307,17 @@ end
 
             for _,TButtons in pairs (TabButtons:GetChildren()) do
                 if not TButtons:IsA("TextButton") then continue end
-
                 library:tween(TButtons, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
+                if TButtons:FindFirstChild("Frame") then
+                    TButtons.Frame.Visible = false
+                end
             end
-            for _,Tab in pairs (Tabs:GetChildren()) do
-                Tab.Visible = false
+            for _,T in pairs (Tabs:GetChildren()) do
+                T.Visible = false
             end
             Tab.Visible = true
             selected_tab = TabButton
+            TabIndicator.Visible = true
             library:tween(TabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(84, 101, 255)})
         end)
         TabButton.MouseEnter:Connect(function()
@@ -373,8 +391,8 @@ end
             local Left = library:create("Frame", {
                 Name = "Left",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 8, 0, 14),
-                Size = UDim2.new(0, 282, 0, 395),
+                Position = UDim2.new(0, 8, 0, 8),
+                Size = UDim2.new(0.5, -12, 1, -8),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
