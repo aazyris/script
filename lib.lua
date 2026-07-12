@@ -5,18 +5,6 @@ function library:tween(...) TweenService:Create(...):Play() end
 
 local uis = game:GetService("UserInputService")
 
--- Custom font loaded from GitHub
-local FONT = Font.new(
-    "rbxassetid://0", -- fallback, replaced below
-    Enum.FontWeight.Bold
-)
-pcall(function()
-    FONT = Font.new(
-        "https://raw.githubusercontent.com/aazyris/script/main/JetBrainsMono-Bold.ttf",
-        Enum.FontWeight.Bold
-    )
-end)
-
 function library:create(Object, Properties, Parent)
     local Obj = Instance.new(Object)
 
@@ -39,51 +27,7 @@ function library:console(func)
     func(("\n"):rep(57))
 end
 
--- Inline Signal (no HTTP dependency)
-do
-    local HttpService = game:GetService("HttpService")
-    local Signal = {}
-    Signal.__index = Signal
-    Signal.ClassName = "Signal"
-    function Signal.new()
-        local self = setmetatable({}, Signal)
-        self._bindableEvent = Instance.new("BindableEvent")
-        self._argMap = {}
-        self._bindableEvent.Event:Connect(function(key)
-            self._argMap[key] = nil
-            if (not self._bindableEvent) and (not next(self._argMap)) then
-                self._argMap = nil
-            end
-        end)
-        return self
-    end
-    function Signal:Fire(...)
-        if not self._bindableEvent then return end
-        local args = table.pack(...)
-        local key = HttpService:GenerateGUID(false)
-        self._argMap[key] = args
-        self._bindableEvent:Fire(key)
-    end
-    function Signal:Connect(handler)
-        return self._bindableEvent.Event:Connect(function(key)
-            local args = self._argMap[key]
-            if args then handler(table.unpack(args, 1, args.n)) end
-        end)
-    end
-    function Signal:Wait()
-        local key = self._bindableEvent.Event:Wait()
-        local args = self._argMap[key]
-        if args then return table.unpack(args, 1, args.n) end
-    end
-    function Signal:Destroy()
-        if self._bindableEvent then
-            self._bindableEvent:Destroy()
-            self._bindableEvent = nil
-        end
-        setmetatable(self, nil)
-    end
-    library.signal = Signal
-end
+library.signal = loadstring(game:HttpGet("https://raw.githubusercontent.com/Quenty/NevermoreEngine/version2/Modules/Shared/Events/Signal.lua"))()
 
 local local_player = game:GetService("Players").LocalPlayer
 local mouse = local_player:GetMouse()
@@ -200,6 +144,18 @@ function library.new(library_title, cfg_location)
 		syn.protect_gui(ScreenGui)
 	end
 
+    local Cursor = library:create("ImageLabel", {
+        Name = "Cursor",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0, 17, 0, 17),
+        Image = "rbxassetid://7205257578",
+        ZIndex = 6969,
+    }, ScreenGui)
+
+    rs.RenderStepped:Connect(function()
+        Cursor.Position = UDim2.new(0, mouse.X, 0, mouse.Y + 36)
+    end)
+
 	ScreenGui.Parent = game:GetService("CoreGui")
 
     function menu.IsOpen()
@@ -209,19 +165,8 @@ function library.new(library_title, cfg_location)
         ScreenGui.Enabled = state
     end
 
-    local currentKey = Enum.KeyCode.Insert
-    local isRebinding = false
-
     uis.InputBegan:Connect(function(key)
-        -- rebind takes priority: if waiting for a key, capture it
-        if isRebinding then
-            if key.KeyCode ~= Enum.KeyCode.Unknown then
-                isRebinding = false
-                currentKey = key.KeyCode
-            end
-            return
-        end
-        if key.KeyCode ~= currentKey then return end
+        if key.KeyCode ~= Enum.KeyCode.Insert then return end
 
 		ScreenGui.Enabled = not ScreenGui.Enabled
         menu.open = ScreenGui.Enabled
@@ -236,8 +181,7 @@ function library.new(library_title, cfg_location)
         Name = "Main",
         AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Color3.fromRGB(15, 15, 15),
-        BorderSizePixel = 0,
-        ClipsDescendants = true,
+        BorderColor3 = Color3.fromRGB(78, 93, 234),
         Position = UDim2.new(0.5, 0, 0.5, 0),
         Size = UDim2.new(0, 700, 0, 500),
         Image = "http://www.roblox.com/asset/?id=7300333488",
@@ -258,7 +202,7 @@ function library.new(library_title, cfg_location)
         BackgroundTransparency = 1,
         Position = UDim2.new(0.5, 0, 0, 0),
         Size = UDim2.new(1, -22, 0, 30),
-        FontFace = FONT,
+        Font = Enum.Font.Ubuntu,
         Text = library_title,
         TextColor3 = Color3.fromRGB(255, 255, 255),
         TextSize = 16,
@@ -266,38 +210,12 @@ function library.new(library_title, cfg_location)
         RichText = true,
     }, ImageLabel)
 
-    -- Minimize button (top-right of title bar)
-    local minimized = false
-    local fullSize = UDim2.new(0, 700, 0, 500)
-    local miniSize = UDim2.new(0, 700, 0, 30)
-
-    local MinimizeBtn = library:create("TextButton", {
-        Name = "MinimizeBtn",
-        AnchorPoint = Vector2.new(1, 0.5),
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -8, 0.5, 0),
-        Size = UDim2.new(0, 20, 0, 20),
-        FontFace = FONT,
-        Text = "_",
-        TextColor3 = Color3.fromRGB(150, 150, 150),
-        TextSize = 14,
-        AutoButtonColor = false,
-        ZIndex = 5,
-    }, Title)
-
-    MinimizeBtn.MouseEnter:Connect(function()
-        library:tween(MinimizeBtn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(255, 255, 255)})
-    end)
-    MinimizeBtn.MouseLeave:Connect(function()
-        library:tween(MinimizeBtn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 150, 150)})
-    end)
-
     local TabButtons = library:create("Frame", {
         Name = "TabButtons",
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 12, 0, 41),
-        Size = UDim2.new(0, 76, 1, -49),
+        Size = UDim2.new(0, 76, 0, 447),
     }, ImageLabel)
     
     local UIListLayout = library:create("UIListLayout", {
@@ -309,20 +227,8 @@ function library.new(library_title, cfg_location)
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 102, 0, 42),
-        Size = UDim2.new(1, -102, 1, -50),
+        Size = UDim2.new(0, 586, 0, 446),
     }, ImageLabel)
-
-    -- Wire minimize click here — TabButtons and Tabs are now declared
-    MinimizeBtn.MouseButton1Down:Connect(function()
-        minimized = not minimized
-        if minimized then
-            MinimizeBtn.Text = "-"
-            library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = miniSize})
-        else
-            MinimizeBtn.Text = "_"
-            library:tween(ImageLabel, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = fullSize})
-        end
-    end)
 
 	if syn then
     local GetName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId)
@@ -339,7 +245,7 @@ end
     local is_first_tab = true
     local selected_tab
     local tab_num = 1
-    function menu.new_tab(tab_name)
+    function menu.new_tab(tab_image)
         local tab = {tab_num = tab_num}
         menu.values[tab_num] = {}
         tab_num = tab_num + 1
@@ -347,21 +253,17 @@ end
         local TabButton = library:create("TextButton", {
             BackgroundColor3 = Color3.fromRGB(255, 255, 255),
             BackgroundTransparency = 1,
-            Size = UDim2.new(0, 76, 0, 40),
+            Size = UDim2.new(0, 76, 0, 90),
             Text = "",
         }, TabButtons)
 
-        local TabImage = library:create("TextLabel", {
-            Name = "ImageLabel",
+        local TabImage = library:create("ImageLabel", {
             AnchorPoint = Vector2.new(0.5, 0.5),
             BackgroundTransparency = 1,
             Position = UDim2.new(0.5, 0, 0.5, 0),
-            Size = UDim2.new(1, -4, 1, -4),
-            FontFace = FONT,
-            Text = tab_name,
-            TextColor3 = Color3.fromRGB(100, 100, 100),
-            TextSize = 13,
-            TextWrapped = true,
+            Size = UDim2.new(0, 32, 0, 32),
+            Image = tab_image,
+            ImageColor3 = Color3.fromRGB(100, 100, 100),
         }, TabButton)
 
         local TabSections = Instance.new("Frame")
@@ -391,14 +293,14 @@ end
             Name = "TabFrames",
             BackgroundTransparency = 1,
             Position = UDim2.new(0, 0, 0, 29),
-            Size = UDim2.new(1, 0, 1, -29),
+            Size = UDim2.new(1, 0, 0, 418),
         }, Tab)
 
         if is_first_tab then
             is_first_tab = false
             selected_tab = TabButton
 
-            TabImage.TextColor3 = Color3.fromRGB(84, 101, 255)
+            TabImage.ImageColor3 = Color3.fromRGB(84, 101, 255)
             Tab.Visible = true
         end
 
@@ -407,27 +309,25 @@ end
 
             for _,TButtons in pairs (TabButtons:GetChildren()) do
                 if not TButtons:IsA("TextButton") then continue end
-                local lbl = TButtons:FindFirstChild("ImageLabel")
-                if lbl then
-                    library:tween(lbl, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
-                end
+
+                library:tween(TButtons.ImageLabel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageColor3 = Color3.fromRGB(100, 100, 100)})
             end
             for _,Tab in pairs (Tabs:GetChildren()) do
                 Tab.Visible = false
             end
             Tab.Visible = true
             selected_tab = TabButton
-            library:tween(TabImage, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(84, 101, 255)})
+            library:tween(TabImage, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageColor3 = Color3.fromRGB(84, 101, 255)})
         end)
         TabButton.MouseEnter:Connect(function()
             if selected_tab == TabButton then return end
 
-            library:tween(TabImage, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(255, 255, 255)})
+            library:tween(TabImage, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageColor3 = Color3.fromRGB(255, 255, 255)})
         end)
         TabButton.MouseLeave:Connect(function()
             if selected_tab == TabButton then return end
 
-            library:tween(TabImage, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
+            library:tween(TabImage, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageColor3 = Color3.fromRGB(100, 100, 100)})
         end)
 
         local is_first_section = true
@@ -444,7 +344,7 @@ end
                 Name = "SectionButton",
                 BackgroundTransparency = 1,
                 Size = UDim2.new(1/num_sections, 0, 1, 0),
-                FontFace = FONT,
+                Font = Enum.Font.Ubuntu,
                 Text = section_name,
                 TextColor3 = Color3.fromRGB(100, 100, 100),
                 TextSize = 15,
@@ -491,7 +391,7 @@ end
                 Name = "Left",
                 BackgroundTransparency = 1,
                 Position = UDim2.new(0, 8, 0, 14),
-                Size = UDim2.new(0.48, -8, 1, -14),
+                Size = UDim2.new(0, 282, 0, 395),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -503,8 +403,8 @@ end
             local Right = library:create("Frame", {
                 Name = "Right",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0.5, 8, 0, 14),
-                Size = UDim2.new(0.48, -8, 1, -14),
+                Position = UDim2.new(0, 298, 0, 14),
+                Size = UDim2.new(0, 282, 0, 395),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -575,7 +475,7 @@ end
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0.5, 0, 0, -8),
                     Size = UDim2.new(1, 0, 0, 15),
-                    FontFace = FONT,
+                    Font = Enum.Font.Ubuntu,
                     Text = sector_name,
                     TextColor3 = Color3.fromRGB(255, 255, 255),
                     TextSize = 14,
@@ -661,7 +561,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 27, 0, 5),
                             Size = UDim2.new(0, 200, 0, 9),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -719,7 +619,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 265, 0, 0),
                                 Size = UDim2.new(0, 56, 0, 20),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = "[ NONE ]",
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -771,7 +671,7 @@ end
                                 Name = "Always",
                                 BackgroundTransparency = 1,
                                 Size = UDim2.new(1, 0, 0, 25),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = "Always",
                                 TextColor3 = Color3.fromRGB(84, 101, 255),
                                 TextSize = 14,
@@ -782,7 +682,7 @@ end
                                 Name = "Hold",
                                 BackgroundTransparency = 1,
                                 Size = UDim2.new(1, 0, 0, 25),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = "Hold",
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -793,7 +693,7 @@ end
                                 Name = "Toggle",
                                 BackgroundTransparency = 1,
                                 Size = UDim2.new(1, 0, 0, 25),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = "Toggle",
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -939,7 +839,7 @@ end
                                 Position = UDim2.new(0, 265, 0.5, 0),
                                 Size = UDim2.new(0, 35, 0, 11),
                                 AutoButtonColor = false,
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = "",
                                 TextXAlignment = Enum.TextXAlignment.Right,
                             }, ToggleButton)
@@ -1228,7 +1128,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 6, 0, 0),
                             Size = UDim2.new(0, 250, 1, 0),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = value.Dropdown,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1247,7 +1147,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 9, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1354,7 +1254,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 8, 0, 0),
                                 Size = UDim2.new(0, 245, 1, 0),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1434,7 +1334,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 6, 0, 0),
                             Size = UDim2.new(0, 250, 1, 0),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = value.Dropdown,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1453,7 +1353,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 9, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1603,7 +1503,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 8, 0, 0),
                                 Size = UDim2.new(0, 245, 1, 0),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1672,7 +1572,7 @@ end
                             Position = UDim2.new(0.5, 0, 0.5, 0),
                             Size = UDim2.new(0, 215, 0, 20),
                             AutoButtonColor = false,
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1720,7 +1620,7 @@ end
                             BorderColor3 = Color3.fromRGB(0, 0, 0),
                             Position = UDim2.new(0.5, 0, 0.5, 0),
                             Size = UDim2.new(0, 215, 0, 20),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -1838,7 +1738,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 7, 0, 0),
                                 Size = UDim2.new(0, 210, 1, 0),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -1916,7 +1816,7 @@ end
                                 BackgroundTransparency = 1,
                                 Position = UDim2.new(0, 7, 0, 0),
                                 Size = UDim2.new(0, 210, 1, 0),
-                                FontFace = FONT,
+                                Font = Enum.Font.Ubuntu,
                                 Text = v,
                                 TextColor3 = Color3.fromRGB(150, 150, 150),
                                 TextSize = 14,
@@ -2016,7 +1916,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 9, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = text,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -2051,7 +1951,7 @@ end
                             BackgroundTransparency = 1,
                             Position = UDim2.new(0, 69, 0, 6),
                             Size = UDim2.new(0, 200, 0, 9),
-                            FontFace = FONT,
+                            Font = Enum.Font.Ubuntu,
                             Text = value.Slider,
                             TextColor3 = Color3.fromRGB(150, 150, 150),
                             TextSize = 14,
@@ -2151,126 +2051,6 @@ end
         end
 
         return tab
-    end
-
-    -- ================================================================
-    --  Built-in Settings Tab (always last)
-    -- ================================================================
-    do
-        local settingsTab = menu.new_tab("Settings")
-
-        -- ── General ──────────────────────────────────────────────
-        local generalSection = settingsTab.new_section("General")
-
-        local keySector = generalSection.new_sector("Menu Key", "Left")
-        -- Clicking this button arms rebinding; next key press is captured by the
-        -- main InputBegan handler which already checks isRebinding first.
-        keySector.element("Button", "Click then press key", {}, function()
-            isRebinding = true
-        end)
-
-        local opacitySector = generalSection.new_sector("Opacity", "Right")
-        opacitySector.element("Slider", "Menu Opacity", {
-            default = 100,
-            min = 30,
-            max = 100,
-            float = 1,
-        }, function(value)
-            ImageLabel.BackgroundTransparency = 1 - (value.Slider / 100)
-        end)
-
-        -- ── Appearance ───────────────────────────────────────────
-        local appSection = settingsTab.new_section("Appearance")
-
-        local accentSector = appSection.new_sector("Accent Color", "Left")
-        local colorPresets = {
-            { name = "Blue",   color = Color3.fromRGB(84,  101, 255) },
-            { name = "Red",    color = Color3.fromRGB(255, 72,  72 ) },
-            { name = "Green",  color = Color3.fromRGB(60,  200, 110) },
-            { name = "Gold",   color = Color3.fromRGB(255, 180, 40 ) },
-            { name = "Purple", color = Color3.fromRGB(200, 80,  255) },
-            { name = "Cyan",   color = Color3.fromRGB(40,  200, 220) },
-        }
-        for _, preset in ipairs(colorPresets) do
-            local col = preset.color
-            accentSector.element("Button", preset.name, {}, function()
-                -- recolor all section gradient decorations
-                for _, obj in ipairs(ImageLabel:GetDescendants()) do
-                    if obj.Name == "SectionDecoration" then
-                        for _, g in ipairs(obj:GetChildren()) do
-                            if g:IsA("UIGradient") then
-                                g.Color = ColorSequence.new{
-                                    ColorSequenceKeypoint.new(0,   Color3.fromRGB(32, 33, 38)),
-                                    ColorSequenceKeypoint.new(0.5, col),
-                                    ColorSequenceKeypoint.new(1,   Color3.fromRGB(32, 33, 38)),
-                                }
-                            end
-                        end
-                    end
-                    -- recolor active toggle frames (not the grey "off" ones)
-                    if obj.Name == "ToggleFrame" then
-                        local bc = obj.BackgroundColor3
-                        local isOff = math.abs(bc.R - 30/255) < 0.02
-                                   and math.abs(bc.G - 30/255) < 0.02
-                                   and math.abs(bc.B - 30/255) < 0.02
-                        if not isOff then
-                            obj.BackgroundColor3 = col
-                        end
-                    end
-                    -- recolor slider fill frames
-                    if obj.Name == "SliderFrame" then
-                        for _, g in ipairs(obj:GetChildren()) do
-                            if g:IsA("UIGradient") then
-                                g.Color = ColorSequence.new{
-                                    ColorSequenceKeypoint.new(0, col),
-                                    ColorSequenceKeypoint.new(1, Color3.fromRGB(
-                                        math.clamp(col.R * 255 * 0.7, 0, 255)/255,
-                                        math.clamp(col.G * 255 * 0.7, 0, 255)/255,
-                                        math.clamp(col.B * 255 * 0.7, 0, 255)/255
-                                    )),
-                                }
-                            end
-                        end
-                    end
-                end
-            end)
-        end
-
-        local windowSector = appSection.new_sector("Window Size", "Right")
-        local sizePresets = {
-            { name = "Small",   size = UDim2.new(0, 600, 0, 430) },
-            { name = "Default", size = UDim2.new(0, 700, 0, 500) },
-            { name = "Large",   size = UDim2.new(0, 820, 0, 560) },
-        }
-        for _, preset in ipairs(sizePresets) do
-            local sz = preset.size
-            windowSector.element("Button", preset.name, {}, function()
-                if not minimized then
-                    fullSize = sz
-                    library:tween(ImageLabel,
-                        TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-                        {Size = sz}
-                    )
-                end
-            end)
-        end
-
-        -- ── Config ───────────────────────────────────────────────
-        local cfgSection = settingsTab.new_section("Config")
-
-        local saveSector = cfgSection.new_sector("Save", "Left")
-        saveSector.element("Button", "Save Config", {}, function()
-            pcall(function()
-                menu.save_cfg("default")
-            end)
-        end)
-
-        local loadSector = cfgSection.new_sector("Load", "Right")
-        loadSector.element("Button", "Load Config", {}, function()
-            pcall(function()
-                menu.load_cfg("default")
-            end)
-        end)
     end
 
     return menu
