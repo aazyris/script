@@ -299,8 +299,10 @@ end
 
                 library:tween(TButtons, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
             end
-            for _,Tab in pairs (Tabs:GetChildren()) do
-                Tab.Visible = false
+            for _, T in pairs (Tabs:GetChildren()) do
+                if T:IsA("Frame") then
+                    T.Visible = false
+                end
             end
             Tab.Visible = true
             selected_tab = TabButton
@@ -377,8 +379,8 @@ end
             local Left = library:create("Frame", {
                 Name = "Left",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 8, 0, 14),
-                Size = UDim2.new(0, 325, 1, -28),
+                Position = UDim2.new(0, 8, 0, 8),
+                Size = UDim2.new(0.5, -12, 1, -8),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
