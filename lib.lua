@@ -260,24 +260,34 @@ end
             Visible = false,
         }, Tabs)
 
+        local TabContainer = library:create("Frame", {
+            Name = "TabContainer",
+            Parent = TabButtons,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 40),
+            ClipsDescendants = true,
+        }, TabButtons)
+
+        TabButton.Parent = TabContainer
+
         local TabSections = library:create("Frame", {
             Name = "TabSections",
-            Parent = Tab,
+            Parent = TabContainer,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 28),
-            ClipsDescendants = true,
-        }, Tab)
+            Position = UDim2.new(0, 0, 0, 40),
+            Size = UDim2.new(1, 0, 0, 0),
+            Visible = false,
+        }, TabContainer)
 
         local UIListLayout = library:create("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
         }, TabSections)
 
         local TabFrames = library:create("Frame", {
             Name = "TabFrames",
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 0, 0, 29),
-            Size = UDim2.new(1, 0, 0, 418),
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(1, 0, 1, 0),
         }, Tab)
 
         if is_first_tab then
@@ -286,23 +296,42 @@ end
 
             TabButton.TextColor3 = Color3.fromRGB(84, 101, 255)
             Tab.Visible = true
+            TabSections.Visible = true
         end
 
         TabButton.MouseButton1Down:Connect(function()
             if selected_tab == TabButton then return end
 
-            for _,TButtons in pairs (TabButtons:GetChildren()) do
-                if not TButtons:IsA("TextButton") then continue end
-
-                library:tween(TButtons, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
+            for _, TC in pairs (TabButtons:GetChildren()) do
+                if not TC:IsA("Frame") then continue end
+                
+                for _, btn in pairs(TC:GetChildren()) do
+                    if btn:IsA("TextButton") then
+                        library:tween(btn, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
+                    end
+                end
             end
+            
+            for _, TC in pairs (TabButtons:GetChildren()) do
+                if TC.Name == "TabContainer" then
+                    local TS = TC:FindFirstChild("TabSections")
+                    if TS then
+                        TS.Visible = false
+                        library:tween(TC, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 40)})
+                    end
+                end
+            end
+
             for _, T in pairs (Tabs:GetChildren()) do
                 if T:IsA("Frame") then
                     T.Visible = false
                 end
             end
             Tab.Visible = true
+            TabSections.Visible = true
+            library:tween(TabContainer, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 0, 40 + TabSections.Size.Y.Offset)})
             selected_tab = TabButton
+            
             library:tween(TabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(84, 101, 255)})
         end)
         TabButton.MouseEnter:Connect(function()
@@ -328,20 +357,14 @@ end
 
             local SectionButton = library:create("TextButton", {
                 Name = "SectionButton",
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1/num_sections, 0, 1, 0),
+                Size = UDim2.new(1, 0, 0, 25),
                 Font = Enum.Font.Ubuntu,
                 Text = section_name,
                 TextColor3 = Color3.fromRGB(100, 100, 100),
-                TextSize = 15,
+                TextSize = 14,
             }, TabSections)
-
-            for _,SectionButtons in pairs (TabSections:GetChildren()) do
-                if SectionButtons:IsA("UIListLayout") then continue end
-
-                SectionButtons.Size = UDim2.new(1/num_sections, 0, 1, 0)
-            end
-
             SectionButton.MouseEnter:Connect(function()
                 if selected_section == SectionButton then return end
 
@@ -353,18 +376,16 @@ end
                 library:tween(SectionButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
             end)
 
+            TabSections.Size = TabSections.Size + UDim2.new(0, 0, 0, 25)
+
             local SectionDecoration = library:create("Frame", {
                 Name = "SectionDecoration",
-                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BackgroundColor3 = Color3.fromRGB(84, 101, 255),
                 BorderSizePixel = 0,
-                Position = UDim2.new(0, 0, 0, 27),
-                Size = UDim2.new(1, 0, 0, 1),
+                Position = UDim2.new(0, 5, 0, 0),
+                Size = UDim2.new(0, 2, 1, 0),
                 Visible = false,
             }, SectionButton)
-
-            local UIGradient = library:create("UIGradient", {
-                Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.fromRGB(32, 33, 38)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(81, 97, 243)), ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 33, 38))},
-            }, SectionDecoration)
 
             local SectionFrame = library:create("Frame", {
                 Name = "SectionFrame",
@@ -2042,11 +2063,52 @@ end
     local builtInSettings = menu.new_tab("Settings")
     local s1 = builtInSettings.new_section("Configuration")
     
+    local HttpService = game:GetService("HttpService")
+    function menu.save_cfg(slot)
+        slot = slot or "Default"
+        local encoded = HttpService:JSONEncode(menu.values)
+        if writefile then
+            pcall(writefile, "Aftermath_Config_" .. slot .. ".json", encoded)
+            print("Config saved to Aftermath_Config_" .. slot .. ".json")
+        end
+    end
+
+    function menu.load_cfg(slot)
+        slot = slot or "Default"
+        if readfile and isfile and pcall(isfile, "Aftermath_Config_" .. slot .. ".json") then
+            local success, decoded = pcall(function()
+                return HttpService:JSONDecode(readfile("Aftermath_Config_" .. slot .. ".json"))
+            end)
+            if success and decoded then
+                for tab_num, tab_data in pairs(decoded) do
+                    if menu.values[tab_num] then
+                        for sec_name, sec_data in pairs(tab_data) do
+                            if menu.values[tab_num][sec_name] then
+                                for sect_name, sect_data in pairs(sec_data) do
+                                    if menu.values[tab_num][sec_name][sect_name] then
+                                        for el_name, el_val in pairs(sect_data) do
+                                            if menu.values[tab_num][sec_name][sect_name][el_name] then
+                                                menu.values[tab_num][sec_name][sect_name][el_name] = el_val
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                menu.on_load_cfg:Fire()
+                print("Config loaded from Aftermath_Config_" .. slot .. ".json")
+            end
+        end
+    end
+
+    local current_slot = "Default"
     local s1Left = s1.new_sector("Config Manager", "Left")
-    s1Left.element("Dropdown", "Slot", { options = {"Default", "Slot 1", "Slot 2", "Slot 3"}, default = {Dropdown = "Default"} })
-    s1Left.element("Button", "Save", nil, function() menu.save_cfg("default") end)
-    s1Left.element("Button", "Load", nil, function() menu.load_cfg("default") end)
-    s1Left.element("Button", "Reset", nil, function() print("Config reset!") end)
+    s1Left.element("Dropdown", "Slot", { options = {"Default", "Slot 1", "Slot 2", "Slot 3"}, default = {Dropdown = "Default"} }, function(v) current_slot = v.Dropdown end)
+    s1Left.element("Button", "Save", nil, function() menu.save_cfg(current_slot) end)
+    s1Left.element("Button", "Load", nil, function() menu.load_cfg(current_slot) end)
+    s1Left.element("Button", "Reset", nil, function() print("Config reset not yet supported") end)
 
     local s1Right = s1.new_sector("Extra Config", "Right")
     s1Right.element("Toggle", "Auto-Load Config")
@@ -2055,8 +2117,21 @@ end
     local s2 = builtInSettings.new_section("Menu Settings")
     
     local s2Left = s2.new_sector("Interface", "Left")
-    s2Left.element("Toggle", "Menu Key", {default = {Toggle = true}}, function(v) end):add_keybind({Key = "Insert", Type = "Toggle"}, function() end)
-    s2Left.element("Toggle", "Watermark", {default = {Toggle = true}})
+    local uis = game:GetService("UserInputService")
+    local menu_key = Enum.KeyCode.Insert
+    s2Left.element("Toggle", "Menu Key", {default = {Toggle = true}}, function(v) end):add_keybind({Key = "Insert", Type = "Toggle"}, function(v)
+        menu_key = v.Key
+    end)
+    
+    uis.InputBegan:Connect(function(input, processed)
+        if input.KeyCode == menu_key and not processed then
+            ImageLabel.Visible = not ImageLabel.Visible
+        end
+    end)
+    
+    s2Left.element("Toggle", "Watermark", {default = {Toggle = true}}, function(v)
+        if Title then Title.Visible = v.Toggle end
+    end)
     
     local s2Right = s2.new_sector("Other", "Right")
     s2Right.element("Button", "Copy Discord", nil, function() pcall(setclipboard, "https://discord.gg/aftermath") end)
