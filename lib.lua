@@ -144,6 +144,8 @@ function library.new(library_title, cfg_location)
 		syn.protect_gui(ScreenGui)
 	end
 
+
+
 	ScreenGui.Parent = game:GetService("CoreGui")
 
     function menu.IsOpen()
@@ -200,33 +202,25 @@ function library.new(library_title, cfg_location)
 
     local TabButtons = library:create("Frame", {
         Name = "TabButtons",
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20),
-        BackgroundTransparency = 0,
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 0, 30),
-        Size = UDim2.new(1, 0, 0, 32),
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 12, 0, 41),
+        Size = UDim2.new(1, -24, 0, 30),
     }, ImageLabel)
-
-    -- thin separator line under tab bar
-    library:create("Frame", {
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-        BorderSizePixel = 0,
-        Position = UDim2.new(0, 0, 1, -1),
-        Size = UDim2.new(1, 0, 0, 1),
-    }, TabButtons)
-
+    
     local UIListLayout = library:create("UIListLayout", {
         FillDirection = Enum.FillDirection.Horizontal,
         HorizontalAlignment = Enum.HorizontalAlignment.Left,
-        VerticalAlignment = Enum.VerticalAlignment.Center,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 5)
     }, TabButtons)
 
     local Tabs = library:create("Frame", {
         Name = "Tabs",
         BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 62),
-        Size = UDim2.new(1, 0, 0, 438),
+        Position = UDim2.new(0, 12, 0, 75),
+        Size = UDim2.new(1, -24, 1, -85),
     }, ImageLabel)
 
 	if syn then
@@ -244,7 +238,7 @@ end
     local is_first_tab = true
     local selected_tab
     local tab_num = 1
-    function menu.new_tab(tab_label)
+    function menu.new_tab(tab_name)
         local tab = {tab_num = tab_num}
         menu.values[tab_num] = {}
         tab_num = tab_num + 1
@@ -252,23 +246,18 @@ end
         local TabButton = library:create("TextButton", {
             BackgroundColor3 = Color3.fromRGB(255, 255, 255),
             BackgroundTransparency = 1,
-            Size = UDim2.new(0, 90, 1, 0),
+            Size = UDim2.new(0, 100, 1, 0),
             Font = Enum.Font.Ubuntu,
-            Text = tab_label,
+            Text = tab_name,
             TextColor3 = Color3.fromRGB(100, 100, 100),
-            TextSize = 14,
+            TextSize = 16,
         }, TabButtons)
 
-        -- active underline indicator
-        local TabIndicator = library:create("Frame", {
-            BackgroundColor3 = Color3.fromRGB(84, 101, 255),
-            BorderSizePixel = 0,
-            Position = UDim2.new(0, 8, 1, -2),
-            Size = UDim2.new(1, -16, 0, 2),
-            Visible = false,
-        }, TabButton)
+        local TabSections = Instance.new("Frame")
+        local TabFrames = Instance.new("Frame")
 
         local Tab = library:create("Frame", {
+            Name = "Tab",
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 1, 0),
             Visible = false,
@@ -276,6 +265,7 @@ end
 
         local TabSections = library:create("Frame", {
             Name = "TabSections",
+            Parent = Tab,
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 28),
             ClipsDescendants = true,
@@ -298,7 +288,6 @@ end
             selected_tab = TabButton
 
             TabButton.TextColor3 = Color3.fromRGB(84, 101, 255)
-            TabIndicator.Visible = true
             Tab.Visible = true
         end
 
@@ -307,17 +296,14 @@ end
 
             for _,TButtons in pairs (TabButtons:GetChildren()) do
                 if not TButtons:IsA("TextButton") then continue end
+
                 library:tween(TButtons, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(100, 100, 100)})
-                if TButtons:FindFirstChild("Frame") then
-                    TButtons.Frame.Visible = false
-                end
             end
-            for _,T in pairs (Tabs:GetChildren()) do
-                T.Visible = false
+            for _,Tab in pairs (Tabs:GetChildren()) do
+                Tab.Visible = false
             end
             Tab.Visible = true
             selected_tab = TabButton
-            TabIndicator.Visible = true
             library:tween(TabButton, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextColor3 = Color3.fromRGB(84, 101, 255)})
         end)
         TabButton.MouseEnter:Connect(function()
@@ -391,8 +377,8 @@ end
             local Left = library:create("Frame", {
                 Name = "Left",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 8, 0, 8),
-                Size = UDim2.new(0.5, -12, 1, -8),
+                Position = UDim2.new(0, 8, 0, 14),
+                Size = UDim2.new(0, 325, 1, -28),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -404,8 +390,8 @@ end
             local Right = library:create("Frame", {
                 Name = "Right",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 298, 0, 14),
-                Size = UDim2.new(0, 282, 0, 395),
+                Position = UDim2.new(0, 343, 0, 14),
+                Size = UDim2.new(0, 325, 1, -28),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
@@ -490,7 +476,7 @@ end
                         Name = "LineFrame",
                         BackgroundTransparency = 1,
                         Position = UDim2.new(0, 0, 0, 0),
-                        Size = UDim2.new(0, 250, 0, thickness * 3),
+                        Size = UDim2.new(1, -20, 0, thickness * 3),
                     }, Container)
 
                     local Line = library:create("Frame", {
