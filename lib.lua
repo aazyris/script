@@ -390,8 +390,8 @@ end
             local Right = library:create("Frame", {
                 Name = "Right",
                 BackgroundTransparency = 1,
-                Position = UDim2.new(0, 343, 0, 14),
-                Size = UDim2.new(0, 325, 1, -28),
+                Position = UDim2.new(0.5, 4, 0, 8),
+                Size = UDim2.new(0.5, -12, 1, -8),
             }, SectionFrame)
 
             local UIListLayout = library:create("UIListLayout", {
